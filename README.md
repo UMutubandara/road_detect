@@ -1,2 +1,2 @@
 # road_detect
-An example of a spinning publisher/subscriber node in Python
+An example of a lane detection function using OpenCV 
