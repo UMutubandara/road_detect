@@ -47,10 +47,10 @@ def draw_lines( img, lines, color=[255, 0, 255], thickness=5):
     return img
 def find_pt_inline(p1, p2, y):
     """
-    Here we use point-slope formula in order to find a point that is present on the line
+    point-slope formula in order to find a point that is present on the line
     that passes through our vanishing point (vp). 
     input: points p1, p2, and y. They come is as tuples [x, y]
-    We then use the point-slope formula: y - b = m(x - a)
+    using the point-slope formula: y - b = m(x - a)
     y: y-coordinate of desired point on the line
     x: x-coordinate of desired point on the line
     m: slope
@@ -68,7 +68,7 @@ def detectLines( image):
     # Read in the image and print some stats
 
     #region of interests 333
-    corners = [(985, 468), (800, 582),(1200, 582)]
+    corners = [(985, 465), (800, 582),(1200, 582)]
 
     
     # plt.imshow(cropped_image)
@@ -99,6 +99,11 @@ left_line_x_pre = []
 left_line_y_pre = []
 right_line_x_pre = []
 right_line_y_pre = []
+
+point_one = 0
+point_two = 0
+point_three = 0
+point_four=0
 def estimateRoadCenter( image, raw_pic):
     lines_image = cv2.HoughLinesP(    image,
                                 rho=3,
@@ -213,18 +218,38 @@ def estimateRoadCenter( image, raw_pic):
     point_2 = [right_x_start, max_y_lane]
     point_3 = find_pt_inline([left_x_start,max_y], [left_x_end,min_y], min_y_lane)
     point_4 = find_pt_inline([right_x_start,max_y], [right_x_end,min_y], min_y_lane)
-    plt.plot(point_1[0], point_1[1], 'c^')
-    plt.plot(point_2[0],point_2[1], 'r+')
-    plt.plot(point_3[0], point_3[1], 'c^')
-    plt.plot(point_4[0],point_4[1], 'r+')
-    plt.imshow(line_image)
+#    plt.plot(point_1[0], point_1[1], 'c^')
+#    plt.plot(point_2[0],point_2[1], 'r+')
+#    plt.plot(point_3[0], point_3[1], 'c^')
+#    plt.plot(point_4[0],point_4[1], 'r+')
+#    plt.imshow(line_image)
     
-    lane_pts = np.array([point_1,point_2,point_4,point_3])
+    #MAKE A LOW PASS FILTER- alpha determines the trust given to new data
+    global point_one
+    global point_two
+    global point_three
+    global point_four
+    
+    alpha = 0.9
+    if (point_one== 0 or point_two ==0 or point_three==0 or point_four==0):
+        point_one = point_1
+        point_two = point_2
+        point_three = point_3
+        point_four = point_4
+    
+    point_one[0] = (1-alpha)*point_1[0]+alpha*point_one[0]
+    point_two[0]= (1-alpha)*point_2[0]+alpha*point_two[0]
+    point_three[0] = (1-alpha)*point_3[0]+alpha*point_three[0]
+    point_four[0] = (1-alpha)*point_4[0] +alpha*point_four[0]
+        
+    lane_lpf= np.array([point_one,point_two,point_four,point_three])
+    lane_raw = np.array([point_1,point_2,point_4,point_3])
     #draw Trapezoid
     #plt.figure(2)
-    alpha = 0.5
-    cv2.polylines(line_image, [lane_pts.astype(np.int32)],True, (0,200,200), thickness=2)
-    cv2.polylines(line_image, [src_pts.astype(np.int32)],True, (0,200,100), thickness=3)
+    
+    cv2.polylines(line_image, [lane_lpf.astype(np.int32)],True, (0,200,200), thickness=2)
+    #cv2.polylines(line_image, [lane_raw.astype(np.int32)],True, (0,0,0), thickness=2)
+    #cv2.polylines(line_image, [src_pts.astype(np.int32)],True, (0,200,100), thickness=3)
 
    #cv2.fillPoly(line_image, [lane_pts], (0,255,255))
     

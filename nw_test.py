@@ -68,7 +68,7 @@ def detectLines( imag):
     # Read in the image and print some stats
 
     #region of interests 333
-    corners = [(985, 468), (800, 582),(1200, 582)]
+    corners = [(985, 440), (800, 582),(1200, 582)]
 
     
     # plt.imshow(cropped_image)
@@ -99,6 +99,11 @@ left_line_x_pre = []
 left_line_y_pre = []
 right_line_x_pre = []
 right_line_y_pre = []
+
+point_one = 0
+point_two = 0
+point_three = 0
+point_four=0
 def estimateRoadCenter( image, raw_pic):
     lines_image = cv2.HoughLinesP(    image,
                                 rho=3,
@@ -216,13 +221,31 @@ def estimateRoadCenter( image, raw_pic):
 #    plt.plot(point_3[0], point_3[1], 'c^')
 #    plt.plot(point_4[0],point_4[1], 'r+')
     
+    #MAKE A LOW PASS FILTER
+    global point_one
+    global point_two
+    global point_three
+    global point_four
     
-    lane_pts = np.array([point_1,point_2,point_4,point_3])
+    alpha = 0.8
+    if (point_one== 0 or point_two ==0 or point_three==0 or point_four==0):
+        point_one = point_1
+        point_two = point_2
+        point_three = point_3
+        point_four = point_4
+    
+    point_one[0] = (1-alpha)*point_1[0]+alpha*point_one[0]
+    point_two[0]= (1-alpha)*point_2[0]+alpha*point_two[0]
+    point_three[0] = (1-alpha)*point_3[0]+alpha*point_three[0]
+    point_four[0] = (1-alpha)*point_4[0] +alpha*point_four[0]
+        
+    lane_lpf= np.array([point_one,point_two,point_four,point_three])
+    lane_raw = np.array([point_1,point_2,point_4,point_3])
     #draw Trapezoid
     #plt.figure(2)
-    alpha = 0.5
-    cv2.polylines(line_image, [lane_pts.astype(np.int32)],True, (0,200,200), thickness=2)
-    #cv2.polylines(line_image, [src_pts.astype(np.int32)],True, (0,200,100), thickness=3)
+    
+    cv2.polylines(line_image, [lane_lpf.astype(np.int32)],True, (0,200,200), thickness=2)
+    cv2.polylines(line_image, [lane_raw.astype(np.int32)],True, (0,200,100), thickness=2)
     plt.figure(1)
     plt.imshow(line_image)
     plt.show
